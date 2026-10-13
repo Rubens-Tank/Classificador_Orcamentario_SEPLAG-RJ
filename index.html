@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classificador de Planejamento e Orçamento</title>
+  
+  <style>
+    :root {
+      --bg-principal: #F4F6F8;
+      --cor-cabecalho: #0B1E3C;
+      --cor-faixa-abas: #1F3D6E;
+      --cor-destaque-aba: #F2B705;
+      
+      --texto-escuro: #1F2937;
+      --texto-suave: #4B5563;
+      --texto-mutado: #6B7280;
+      
+      --cor-acoes: #6B46C1;
+      --cor-frs: #2563EB;
+      --cor-nds: #03A55A;
+      --cor-nrs: #D97706;
+      --cor-unidades: #0D9488;
+      --cor-co: #DC2626;
+      --cor-orgao: #8B5CF6;
+
+      --bg-caixa-texto-estrutura: #E9F0F0;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-principal);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ESTILIZAÇÃO DO CABEÇALHO PADRÃO SEPLAG / ERJ */
+    header.header-seplag {
+      width: 100%;
+      background-color: #0B1E3C;
+      min-height: 2.8cm;
+      display: flex;
+      flex-direction: row; /* Coloca os logos e o título lado a lado */
+      align-items: center; /* Centraliza verticalmente */
+      justify-content: flex-start; /* Alinha o conteúdo à esquerda */
+      padding: 15px 30px;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+
+    .header-top-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-right: 25px; /* Separa os logos do título */
+      flex-shrink: 0;
+    }
+
+    /* Tratamento da logo SEPLAG RJ */
+    .logo-seplag {
+      height: 0.9cm;
+      max-width: 220px;
+      object-fit: contain;
+      mix-blend-mode: screen;
+    }
+
+    /* Divisor vertical entre os logos */
+    .header-divider {
+      width: 1px;
+      height: 0.9cm;
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Tratamento da logo SIPLAG RJ */
+    .logo-siplag {
+      width: 2cm !important;
+      height: 1cm !important;
+      max-width: 2cm !important;
+      max-height: 1cm !important;
+      object-fit: contain;
+      filter: brightness(0) invert(1); /* Torna o logo totalmente branco para destacar no fundo escuro */
+    }
+
+    /* Título principal ao lado dos logos */
+    .header-title {
+      font-family: Arial, sans-serif;
+      font-size: 0.7cm;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0;
+      line-height: 1.1;
+      text-align: left; /* Alinhamento do texto à esquerda */
+    }
+  
+    /* FAIXA DE ABAS DE NAVEGAÇÃO */
+    nav.nav-faixa-abas {
+      width: 100%;
+      background-color: var(--cor-faixa-abas);
+      height: 1.5cm; /* ~56.7px */
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      overflow-x: auto;
+    }
+
+    .tabs-container {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      gap: 5px;
+    }
+
+    .tab-button {
+      height: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 4px solid transparent;
+      color: #A0AEC0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .tab-button:hover {
+      color: #FFFFFF;
+    }
+
+    /* CÍRCULO NUMERADO (0.3cm de raio = 0.6cm de diâmetro) */
+    .tab-button .circulo-numero {
+      width: 0.6cm;
+      height: 0.6cm;
+      border-radius: 50%;
+      background-color: #3B5998;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    /* ESTADO ATIVO DA ABA CLICADA */
+    .tab-button.active {
+      color: #FFFFFF !important;
+      font-weight: bold !important;
+      border-bottom: 4px solid var(--cor-destaque-aba) !important;
+    }
+
+    .tab-button.active .circulo-numero {
+      background-color: var(--cor-destaque-aba) !important;
+      color: #0B1E3C !important;
+    }
+
+    /* CORPO DA APLICAÇÃO */
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      padding: 25px 15px;
+    }
+
+    .subtitulo-topo {
+      font-size: 0.8rem;
+      color: var(--texto-mutado);
+      margin-bottom: 4px;
+    }
+
+    .descricao-pagina {
+      font-size: 0.875rem;
+      color: var(--texto-suave);
+      margin-bottom: 20px;
+    }
+
+    /* CAMPO DE BUSCA */
+    .search-container {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 2px solid var(--cor-acoes);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      padding: 12px 18px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-container input {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: var(--texto-escuro);
+      background: transparent;
+    }
+
+    .search-container input::placeholder {
+      color: #9CA3AF;
+      font-weight: 400;
+    }
+
+    .search-container .clear-btn {
+      cursor: pointer;
+      color: var(--texto-mutado);
+      font-size: 1.2rem;
+      background: none;
+      border: none;
+      padding: 0 4px;
+    }
+
+    .search-hint {
+      font-size: 0.8rem;
+      color: var(--texto-mutado);
+      margin-bottom: 22px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge-exemplo {
+      background: #FFFFFF;
+      border: 1px dashed #D1D5DB;
+      color: #4B5563;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .badge-exemplo:hover {
+      border-color: var(--texto-escuro);
+      color: var(--texto-escuro);
+      background-color: #F3F4F6;
+    }
+
+    /* MÓDULO CO */
+    .co-form-container {
+      background: #ffffff;
+      border-radius: 12px;
+      border-top: 4px solid var(--cor-co);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .co-grid-filtros {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .co-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .co-field-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--texto-suave);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .co-field-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #D1D5DB;
+      font-size: 0.9rem;
+      color: var(--texto-escuro);
+      background-color: #F9FAFB;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .co-field-group select:focus {
+      border-color: var(--cor-co);
+      background-color: #FFFFFF;
+    }
+
+    .co-result-card {
+      background: #FEF2F2;
+      border: 2px solid #FCA5A5;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .co-result-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #991B1B;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .co-result-value {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #7F1D1D;
+      letter-spacing: 1px;
+    }
+
+    .co-result-descricao {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #991B1B;
+      margin-top: 8px;
+      border-top: 1px dashed #FCA5A5;
+      padding-top: 8px;
+    }
+
+    /* MÓDULO ÓRGÃO */
+    .orgao-container-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border-top: 4px solid var(--cor-orgao);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .orgao-header-select {
+      margin-bottom: 20px;
+    }
+
+    .orgao-header-select label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--texto-suave);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .orgao-header-select select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #D1D5DB;
+      font-size: 1rem;
+      color: var(--texto-escuro);
+      background-color: #F9FAFB;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .orgao-header-select select:focus {
+      border-color: var(--cor-orgao);
+      background-color: #FFFFFF;
+    }
+
+    .tabela-uo-container {
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+
+    .tabela-uo {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .tabela-uo th {
+      background-color: #F3E8FF;
+      color: var(--cor-orgao);
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 2px solid #DDD6FE;
+    }
+
+    .tabela-uo td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #E5E7EB;
+      color: var(--texto-escuro);
+    }
+
+    .tabela-uo tr:hover {
+      background-color: #F9FAFB;
+    }
+
+    /* CARDS PADRÃO */
+    .card-ficha {
+      background: #ffffff;
+      border-radius: 10px;
+      border-top: 4px solid var(--cor-acoes);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .codigo-destaque {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--texto-escuro);
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .titulo-destaque {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--texto-escuro);
+      margin-bottom: 12px;
+    }
+
+    .tags-linha {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tag-info {
+      background-color: #F3F4F6;
+      border: 1px solid #E5E7EB;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      color: var(--texto-suave);
+    }
+
+    .secao-bloco {
+      border-top: 1px solid #F3F4F6;
+      padding-top: 15px;
+      margin-top: 15px;
+    }
+
+    .rotulo-campo {
+      font-size: 0.75rem;
+      color: var(--texto-mutado);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .valor-campo {
+      font-size: 0.9rem;
+      color: var(--texto-escuro);
+      line-height: 1.4;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .estrutura-codigo-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .linha-estrutura {
+      display: flex;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .caixa-codigo {
+      width: 110px;
+      padding: 10px;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .caixa-codigo.nd { background-color: #03A55A; }
+    .caixa-codigo.nr { background-color: #D97706; }
+
+    .caixa-explicacao {
+      background-color: var(--bg-caixa-texto-estrutura);
+      border: 1px solid #D1E0E0;
+      border-left: none;
+      padding: 8px 14px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .caixa-explicacao .nome-item {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--texto-escuro);
+    }
+
+    .caixa-explicacao .nivel-item {
+      font-size: 0.725rem;
+      color: var(--texto-mutado);
+    }
+
+    .pills-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .pill-item {
+      background-color: #F3F4F6;
+      border: 1px solid #E5E7EB;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.825rem;
+      color: var(--texto-escuro);
+    }
+
+    .box-fontes-unicas {
+      background-color: #F0FDFA;
+      border: 1px solid #CCFBF1;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 15px;
+    }
+
+    .box-fontes-unicas .titulo-box-fontes {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #0D9488;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .lista-fontes-vinculadas {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .lista-fontes-vinculadas li {
+      font-size: 0.875rem;
+      color: var(--texto-escuro);
+    }
+
+    .rodape-status {
+      font-size: 0.75rem;
+      color: var(--texto-mutado);
+      margin-top: 25px;
+      line-height: 1.4;
+    }
+
+    .mensagem-vazia {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--texto-mutado);
+      background: #ffffff;
+      border-radius: 8px;
+    }
+
+    /* Estilos da Estrutura do Código */
+    .linha-estrutura {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .badge-codigo {
+      background-color: #00a859;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 1.1rem;
+      width: 60px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .info-rotulo {
+      width: 210px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-rotulo strong {
+      font-size: 0.9rem;
+      color: #2c3e50;
+    }
+
+    .info-rotulo small {
+      font-size: 0.75rem;
+      color: #7f8c8d;
+    }
+
+    .info-descricao {
+      flex: 1;
+      background-color: #eef2f3;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      color: #333333;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+    }
+  </style>
+
+  <!-- CARREGAMENTO DO ARQUIVO DE DADOS -->
+  <script src="./dados.js" onerror="console.error('Erro ao carregar o arquivo dados.js. Verifique se o arquivo esta na mesma pasta.');"></script>
+</head>
+<body>
+
+  <!-- CABEÇALHO SUPERIOR SEPLAG (3cm) -->
+  <header class="header-seplag">
+    <div class="header-top-row">
+      <img src="logo_seplag_rj.png" alt="Governo do Estado do Rio de Janeiro - SEPLAG" class="logo-seplag">
+      <div class="header-divider"></div>
+      <img src="logo_siplag_rj.png" alt="SIPLAG" class="logo-siplag">
+    </div>
+    <h1 class="header-title">Classificador de Planejamento e Orçamento</h1>
+  </header>
+
+  <!-- FAIXA DE ABAS (1.5cm) -->
+  <nav class="nav-faixa-abas">
+    <div class="tabs-container">
+      <button class="tab-button active" data-source="acoes">
+        <span class="circulo-numero">1</span> AÇÕES
+      </button>
+      <button class="tab-button" data-source="frs">
+        <span class="circulo-numero">2</span> FONTE DE RECURSO
+      </button>
+      <button class="tab-button" data-source="nds">
+        <span class="circulo-numero">3</span> NATUREZA DE DESPESA
+      </button>
+      <button class="tab-button" data-source="nrs">
+        <span class="circulo-numero">4</span> NATUREZA DE RECEITA
+      </button>
+      <button class="tab-button" data-source="unidades">
+        <span class="circulo-numero">5</span> UNIDADE ORÇAMENTÁRIA
+      </button>
+      <button class="tab-button" data-source="co">
+        <span class="circulo-numero">6</span> QUAL O CO?
+      </button>
+      <button class="tab-button" data-source="orgao">
+        <span class="circulo-numero">7</span> ÓRGÃO
+      </button>
+    </div>
+  </nav>
+
+  <!-- CONTEÚDO DA APLICAÇÃO -->
+  <div class="container">
+    <div class="subtitulo-topo">Exercício 2026 - base extraída das planilhas do sistema orçamentário</div>
+    <div class="descricao-pagina">Digite um código e veja a descrição oficial, a estrutura do código e os demais atributos cadastrados.</div>
+
+    <!-- CAMPO DE BUSCA -->
+    <div class="search-container" id="boxBusca">
+      <input type="text" id="inputBusca" placeholder="Código da ação, ex. 0002" value="">
+      <button class="clear-btn" id="btnLimpar">&times;</button>
+    </div>
+    
+    <!-- DICA E EXEMPLOS CLICÁVEIS -->
+    <div class="search-hint" id="dicaBusca"></div>
+
+    <!-- ÁREA DE RESULTADOS -->
+    <div id="areaResultado"></div>
+
+    <!-- RODAPÉ DE STATUS -->
+    <div class="rodape-status" id="rodapeStatus">
+      Carregando interface...
+    </div>
+  </div>
+
+  <script>
+    const CONFIG_ABAS = {
+      acoes: {
+        cor: '#6B46C1',
+        placeholder: 'Código da ação, ex. 0002 ou 0016',
+        instrucoes: 'Busca por <b>Código da Ação</b> (ex: 0002, 0016) ou por trecho do título',
+        exemplos: ['0002', '0016', '0003']
+      },
+      frs: {
+        cor: '#2563EB',
+        placeholder: 'Código da fonte, ex. 1.500.100',
+        instrucoes: 'Busca por <b>Código</b> (coluna A) ou por trecho do título',
+        exemplos: ['1.500.100', '1.501.101']
+      },
+      nds: {
+        cor: '#03A55A',
+        placeholder: 'Natureza de despesa, ex. 31900301',
+        instrucoes: 'Busca por <b>Categoria + Grupo + Modalidade/Elemento</b> ou por trecho do título',
+        exemplos: ['31900301', '33903001', '33909201']
+      },
+      nrs: {
+        cor: '#D97706',
+        placeholder: 'Natureza de receita, ex. 1112510100',
+        instrucoes: 'Busca por <b>Natureza de Receita</b> ou por trecho do título',
+        exemplos: ['1112510100', '7216021101']
+      },
+      unidades: {
+        cor: '#0D9488',
+        placeholder: 'Código ou Sigla da unidade, ex. 01010 ou FES',
+        instrucoes: 'Busca por <b>Código</b>, <b>Sigla</b> (ex: FES, METRO) ou por trecho do título',
+        exemplos: ['01010', 'FES', 'METRO', '29610']
+      },
+      co: {
+        cor: '#DC2626',
+        placeholder: 'Selecione os atributos nos campos abaixo...',
+        instrucoes: 'Selecione a <b>Unidade</b>, <b>Função</b>, <b>Subfunção</b>, <b>Ação</b> e <b>Fonte</b> para identificar o Código de Acompanhamento (CO)',
+        exemplos: []
+      },
+      orgao: {
+        cor: '#8B5CF6',
+        placeholder: 'Selecione o Órgão no menu abaixo...',
+        instrucoes: 'Selecione um <b>Órgão</b> para listar todas as suas Unidades Orçamentárias (UO), Siglas e Funções associadas',
+        exemplos: []
+      }
+    };
+
+    let abaAtiva = 'acoes';
+    let filtroCO = { unidade: '', funcao: '', subfuncao: '', acao: '', fonte: '' };
+    let orgaoSelecionado = '';
+
+    // Mapeamento global de elementos DOM
+    let inputBusca, boxBusca, btnLimpar, areaResultado, rodapeStatus, dicaBusca, tabs;
+
+    function normalizarTexto(texto) {
+      if (!texto) return '';
+      return String(texto)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .trim();
+    }
+
+    function limparPontuacao(texto) {
+      return normalizarTexto(texto).replace(/[.\-\/\s]/g, '');
+    }
+
+    function obterBaseDados(tipo) {
+      if (tipo === 'acoes' && typeof DADOS_ACOES !== 'undefined') return DADOS_ACOES;
+      if (tipo === 'frs' && typeof DADOS_FRS !== 'undefined') return DADOS_FRS;
+      if (tipo === 'nds' && typeof DADOS_NDS !== 'undefined') return DADOS_NDS;
+      if (tipo === 'nrs' && typeof DADOS_NRS !== 'undefined') return DADOS_NRS;
+      if (tipo === 'unidades' && typeof DADOS_UNIDADES !== 'undefined') return DADOS_UNIDADES;
+      if (tipo === 'co' && typeof DADOS_CO !== 'undefined') return DADOS_CO;
+      if (tipo === 'orgao' && typeof DADOS_UNIDADES !== 'undefined') return DADOS_UNIDADES;
+      return null;
+    }
+
+    function obterPropriedade(obj, ...chaves) {
+      if (!obj) return '-';
+      for (const chave of chaves) {
+        if (obj[chave] !== undefined && obj[chave] !== null && String(obj[chave]).trim() !== '') {
+          return obj[chave];
+        }
+      }
+      return '-';
+    }
+
+    function obterCodigoCompleto(item, tipo) {
+      if (!item) return '';
+      
+      if (tipo === 'nds') {
+        if (item.ND) return String(item.ND);
+        const cat = String(item.categoria_economica || '');
+        const grp = String(item.grupo_despesa || '');
+        const modEl = String(item.modalidade_elemento || item.modalidade_elemento_subelemento || '');
+        return cat + grp + modEl;
+      }
+
+      if (tipo === 'nrs') {
+        return String(obterPropriedade(item, 'natureza_receita', 'NR', 'codigo'));
+      }
+
+      return String(obterPropriedade(item, 'codigo', 'codigo_completo', 'uo'));
+    }
+
+    function processarBuscaUnidades(termoBusca, listaUnidades) {
+      const termo = normalizarTexto(termoBusca);
+      if (!termo) return [];
+
+      const filtrados = listaUnidades.filter(item => {
+        const uo = normalizarTexto(item.uo || item.codigo);
+        const sigla = normalizarTexto(item.sigla);
+        const unidade = normalizarTexto(item.unidade || item.descricao || item.titulo);
+
+        return uo.includes(termo) || sigla.includes(termo) || unidade.includes(termo);
+      });
+
+      return filtrados.sort((a, b) => {
+        const siglaA = normalizarTexto(a.sigla);
+        const siglaB = normalizarTexto(b.sigla);
+        const uoA = normalizarTexto(a.uo || a.codigo);
+        const uoB = normalizarTexto(b.uo || b.codigo);
+
+        if (siglaA === termo && siglaB !== termo) return -1;
+        if (siglaB === termo && siglaA !== termo) return 1;
+
+        if (uoA === termo && uoB !== termo) return -1;
+        if (uoB === termo && uoA !== termo) return 1;
+
+        if (siglaA.startsWith(termo) && !siglaB.startsWith(termo)) return -1;
+        if (siglaB.startsWith(termo) && !siglaA.startsWith(termo)) return 1;
+
+        return 0;
+      });
+    }
+
+    function renderizarDicaExemplos(config) {
+      if (!dicaBusca) return;
+      dicaBusca.innerHTML = `
+        ${config.instrucoes}
+        ${config.exemplos.length > 0 ? `&nbsp; Exemplos: ${config.exemplos.map(ex => `<span class="badge-exemplo" onclick="aplicarExemplo('${ex}')">${ex}</span>`).join(' ')}` : ''}
+      `;
+    }
+
+    window.aplicarExemplo = function(valor) {
+      if (inputBusca) {
+        inputBusca.value = valor;
+        executarBusca();
+      }
+    };
+
+    function executarBusca() {
+      if (abaAtiva === 'co') {
+        renderizarModuloCO();
+        return;
+      }
+
+      if (abaAtiva === 'orgao') {
+        renderizarModuloOrgao();
+        return;
+      }
+
+      const dados = obterBaseDados(abaAtiva);
+      const termoOriginal = inputBusca.value.trim();
+      const termoNormalizado = normalizarTexto(termoOriginal);
+      const termoSemPontuacao = limparPontuacao(termoOriginal);
+
+      if (!dados) {
+        areaResultado.innerHTML = `<div class="mensagem-vazia">Nenhum dado encontrado para a aba selecionada.</div>`;
+        rodapeStatus.innerHTML = `<span style="color:#DC2626;"><b>Atenção:</b> Os dados de <b>${abaAtiva.toUpperCase()}</b> não foram encontrados em <code>dados.js</code>.</span>`;
+        return;
+      }
+
+      rodapeStatus.innerHTML = `Base <b>${abaAtiva.toUpperCase()}</b> carregada — Total de <b>${dados.length}</b> registros cadastrados.`;
+
+      if (!termoNormalizado) {
+        areaResultado.innerHTML = `<div class="mensagem-vazia">Digite um código ou descrição para pesquisar.</div>`;
+        return;
+      }
+
+      let filtrados = [];
+
+      if (abaAtiva === 'unidades') {
+        filtrados = processarBuscaUnidades(termoOriginal, dados);
+      } else {
+        filtrados = dados.filter(item => {
+          const codItem = obterCodigoCompleto(item, abaAtiva);
+          const codLimpo = limparPontuacao(codItem);
+
+          if (abaAtiva === 'acoes' && /^\d+$/.test(termoSemPontuacao)) {
+            const termoFormatado = termoSemPontuacao.padStart(4, '0');
+            const codItemFormatado = codLimpo.padStart(4, '0');
+            return codItemFormatado === termoFormatado;
+          }
+
+          if (abaAtiva === 'nds') {
+            const matchCodigo = termoSemPontuacao.length > 0 && codLimpo.includes(termoSemPontuacao);
+            const matchDescricao = item.descricao && normalizarTexto(item.descricao).includes(termoNormalizado);
+            return matchCodigo || matchDescricao;
+          }
+
+          if (/^\d+$/.test(termoSemPontuacao)) {
+            if (codLimpo.includes(termoSemPontuacao)) return true;
+          }
+
+          return Object.values(item).some(valor => {
+            if (valor === null || valor === undefined) return false;
+            const valorStr = String(valor);
+            const valorNorm = normalizarTexto(valorStr);
+            const valorLimpo = limparPontuacao(valorStr);
+
+            return valorNorm.includes(termoNormalizado) ||
+                   (termoSemPontuacao.length > 0 && valorLimpo.includes(termoSemPontuacao));
+          });
+        });
+      }
+
+      if (filtrados.length === 0) {
+        areaResultado.innerHTML = `<div class="mensagem-vazia">Nenhum registro encontrado correspondente a "<b>${termoOriginal}</b>".</div>`;
+        return;
+      }
+
+      if (abaAtiva === 'acoes') {
+        const acoesAgrupadas = agruparAcoes(filtrados);
+        areaResultado.innerHTML = acoesAgrupadas.slice(0, 10).map(a => renderizarCardAcaoAgrupada(a)).join('');
+      } else if (abaAtiva === 'unidades') {
+        const unidadesAgrupadas = agruparUnidadesPreservandoOrdem(filtrados);
+        areaResultado.innerHTML = unidadesAgrupadas.slice(0, 10).map(u => renderizarCardUnidade(u)).join('');
+      } else {
+        areaResultado.innerHTML = filtrados.slice(0, 10).map(item => renderizarCardPadrao(item, abaAtiva)).join('');
+      }
+    }
+
+    function agruparAcoes(lista) {
+      const mapa = new Map();
+
+      lista.forEach(item => {
+        let cod = String(item.codigo || '').trim();
+        if (cod.length > 0 && cod.length < 4 && /^\d+$/.test(cod)) {
+          cod = cod.padStart(4, '0');
+        }
+
+        if (!mapa.has(cod)) {
+          mapa.set(cod, {
+            infoGeral: item,
+            unidades: new Set(),
+            funcoes: new Set(),
+            subfuncoes: new Set(),
+            produtos: new Set()
+          });
+        }
+
+        const reg = mapa.get(cod);
+        if (item.unidade_orcamentaria) reg.unidades.add(item.unidade_orcamentaria);
+        if (item.funcao) reg.funcoes.add(item.funcao);
+        if (item.subfuncao) reg.subfuncoes.add(item.subfuncao);
+        if (item.produtos) reg.produtos.add(item.produtos);
+      });
+
+      return Array.from(mapa.values());
+    }
+
+    function agruparUnidadesPreservandoOrdem(lista) {
+      const mapa = new Map();
+      lista.forEach(item => {
+        const cod = obterPropriedade(item, 'uo', 'codigo');
+        if (!mapa.has(cod)) {
+          mapa.set(cod, { infoGeral: item, fontes: [] });
+        }
+        const fontesVinculadas = item.fontes_recurso_vinculadas || item.fonte_recurso || item.fonte;
+        if (fontesVinculadas && fontesVinculadas !== '-') {
+          if (Array.isArray(fontesVinculadas)) {
+            mapa.get(cod).fontes.push(...fontesVinculadas);
+          } else {
+            mapa.get(cod).fontes.push(fontesVinculadas);
+          }
+        }
+      });
+      return Array.from(mapa.values());
+    }
+
+    function renderizarCardAcaoAgrupada(agrupado) {
+  const item = agrupado.infoGeral;
+  let codigo = String(item.codigo || '').trim();
+  if (codigo.length > 0 && codigo.length < 4 && /^\d+$/.test(codigo)) {
+    codigo = codigo.padStart(4, '0');
+  }
+
+  const titulo = obterPropriedade(item, 'titulo', 'nome');
+  const descricao = obterPropriedade(item, 'descricao');
+  const config = CONFIG_ABAS['acoes'];
+
+  const listaUnidades = Array.from(agrupado.unidades);
+  const listaFuncoes = Array.from(agrupado.funcoes);
+  const listaSubfuncoes = Array.from(agrupado.subfuncoes);
+  const listaProdutos = Array.from(agrupado.produtos);
+
+  return `
+    <div class="card-ficha" style="border-top-color: ${config.cor};">
+      <div class="codigo-destaque">${codigo}</div>
+      <div class="titulo-destaque">${titulo}</div>
+      <div class="tags-linha"><span class="tag-info">Ações - 2026</span></div>
+      
+      <!-- EXIBIÇÃO DA DESCRIÇÃO DA AÇÃO -->
+      ${descricao && descricao !== '-' ? `
+        <div class="secao-bloco">
+          <div class="rotulo-campo">Descrição da Ação</div>
+          <div class="valor-campo" style="margin-top: 4px; line-height: 1.5; text-align: justify;">
+            ${descricao}
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="secao-bloco grid-4">
+        <div><div class="rotulo-campo">Programa</div><div class="valor-campo">${obterPropriedade(item, 'programa')}</div></div>
+        <div><div class="rotulo-campo">Tipo de Ação</div><div class="valor-campo">${obterPropriedade(item, 'tipo_acao')}</div></div>
+        <div><div class="rotulo-campo">Grupo de Gastos</div><div class="valor-campo">${obterPropriedade(item, 'grupo_gastos')}</div></div>
+        <div><div class="rotulo-campo">Padronização</div><div class="valor-campo">${obterPropriedade(item, 'padronizacao')}</div></div>
+      </div>
+      
+      <div class="secao-bloco grid-4">
+        <div><div class="rotulo-campo">Indicador de Resultado</div><div class="valor-campo">${obterPropriedade(item, 'indicador_resultado')}</div></div>
+        <div><div class="rotulo-campo">Limite do Teto</div><div class="valor-campo">${obterPropriedade(item, 'limite_teto')}</div></div>
+        <div><div class="rotulo-campo">Vigência</div><div class="valor-campo">${obterPropriedade(item, 'vigencia')}</div></div>
+        <div><div class="rotulo-campo">Fundamento Legal</div><div class="valor-campo">${obterPropriedade(item, 'fundamento_legal')}</div></div>
+      </div>
+
+      ${renderizarSecaoListas('Unidades Orçamentárias', listaUnidades)}
+      ${renderizarSecaoListas('Funções', listaFuncoes)}
+      ${renderizarSecaoListas('Subfunções', listaSubfuncoes)}
+      ${renderizarSecaoListas('Produtos', listaProdutos)}
+    </div>`;
+}
+
+    function renderizarCardUnidade(agrupado) {
+      const item = agrupado.infoGeral;
+      const codigo = obterPropriedade(item, 'uo', 'codigo');
+      const titulo = obterPropriedade(item, 'unidade', 'descricao', 'titulo');
+      const sigla = obterPropriedade(item, 'sigla');
+      const fontesUnicas = [...new Set(agrupado.fontes)];
+
+      return `
+        <div class="card-ficha" style="border-top-color: var(--cor-unidades);">
+          <div class="codigo-destaque">${codigo}${sigla !== '-' ? `<span style="font-size: 0.8em; color: var(--cor-unidades);"> (${sigla})</span>` : ''}</div>
+          <div class="titulo-destaque">${titulo}</div>
+          
+          <div class="tags-linha"><span class="tag-info">Unidade Orçamentária - 2026</span></div>
+          
+          <div class="secao-bloco grid-4">
+            <div><div class="rotulo-campo">Sigla</div><div class="valor-campo">${obterPropriedade(item, 'sigla')}</div></div>
+            <div><div class="rotulo-campo">Órgão</div><div class="valor-campo">${obterPropriedade(item, 'orgao')}</div></div>
+            <div><div class="rotulo-campo">Tipo de Unidade</div><div class="valor-campo">${obterPropriedade(item, 'tipo_unidade')}</div></div>
+            <div><div class="rotulo-campo">Vigência</div><div class="valor-campo">${obterPropriedade(item, 'vigencia')}</div></div>
+          </div>
+          
+          <div class="secao-bloco grid-4">
+            <div><div class="rotulo-campo">Cód. Unid. Gestão</div><div class="valor-campo">${obterPropriedade(item, 'codigo_unidade_gestao')}</div></div>
+            <div><div class="rotulo-campo">UGE Principal</div><div class="valor-campo">${obterPropriedade(item, 'uge_principal')}</div></div>
+            <div><div class="rotulo-campo">Esfera Orçamentária</div><div class="valor-campo">${obterPropriedade(item, 'esfera_orcamentaria')}</div></div>
+            <div><div class="rotulo-campo">Fundamento Legal</div><div class="valor-campo">${obterPropriedade(item, 'fundamento_legal')}</div></div>
+          </div>
+
+          ${renderizarSecaoListas('Funções', obterPropriedade(item, 'funcao'))}
+
+          ${fontesUnicas.length > 0 ? `
+            <div class="box-fontes-unicas">
+              <div class="titulo-box-fontes">Fontes de Recurso Vinculadas (${fontesUnicas.length})</div>
+              <ul class="lista-fontes-vinculadas">
+                ${fontesUnicas.map(f => `<li>${f}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>`;
+    }
+
+    function renderizarCardPadrao(item, tipo) {
+      const codigo = obterCodigoCompleto(item, tipo);
+      const config = CONFIG_ABAS[tipo];
+
+      if (tipo === 'frs') {
+        return `
+          <div class="card-ficha" style="border-top-color: ${config.cor};">
+            <div class="codigo-destaque">${codigo}</div>
+            <div class="titulo-destaque">${obterPropriedade(item, 'titulo_oficial', 'titulo', 'nome')}</div>
+            <div class="tags-linha"><span class="tag-info">Fonte de Recurso - 2026</span></div>
+            <div class="secao-bloco">
+              <div class="rotulo-campo">Título Completo</div>
+              <div class="valor-campo">${obterPropriedade(item, 'titulo_completo', 'titulo_oficial')}</div>
+            </div>
+            <div class="secao-bloco grid-4">
+              <div><div class="rotulo-campo">Origem dos Recursos</div><div class="valor-campo">${obterPropriedade(item, 'origem_recursos')}</div></div>
+              <div><div class="rotulo-campo">Vinculação dos Recursos</div><div class="valor-campo">${obterPropriedade(item, 'vinculacao_recursos')}</div></div>
+              <div><div class="rotulo-campo">Indicador Fonte Tesouro</div><div class="valor-campo">${obterPropriedade(item, 'indicador_fonte_tesouro')}</div></div>
+              <div><div class="rotulo-campo">Indicador de Resultado</div><div class="valor-campo">${obterPropriedade(item, 'indicador_resultado')}</div></div>
+            </div>
+            <div class="secao-bloco grid-4">
+              <div><div class="rotulo-campo">Limite / Teto</div><div class="valor-campo">${obterPropriedade(item, 'limite_teto')}</div></div>
+              <div><div class="rotulo-campo">Permite Expansão</div><div class="valor-campo">${obterPropriedade(item, 'permite_expansao')}</div></div>
+              <div><div class="rotulo-campo">Grupo FR PPA</div><div class="valor-campo">${obterPropriedade(item, 'grupo_fr_ppa')}</div></div>
+              <div><div class="rotulo-campo">Vigência</div><div class="valor-campo">${obterPropriedade(item, 'vigencia')}</div></div>
+            </div>
+          </div>`;
+      }
+
+      if (tipo === 'nds') {
+        const nd = String(item.ND || codigo);
+
+        return `
+          <div class="card-ficha" style="border-top-color: #03A55A;">
+            <div class="codigo-destaque">${nd}</div>
+            <div class="titulo-destaque">${obterPropriedade(item, 'subelemento_desc', 'titulo', 'nome')}</div>
+            
+            <div class="tags-linha">
+              <span class="tag-info">Natureza de Despesa - 2026</span>
+            </div>
+
+            <div class="secao-bloco">
+              <div class="rotulo-campo">Descrição Detalhada</div>
+              <div class="valor-campo" style="margin-top:6px; font-size: 0.95rem;">${obterPropriedade(item, 'descricao_detalhada', 'descricao')}</div>
+            </div>
+
+            <div class="secao-bloco">
+              <div class="rotulo-campo" style="margin-bottom:10px;">Estrutura do código</div>
+              <div class="estrutura-codigo-container">
+                
+                <!-- Categoria Econômica -->
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nd">${obterPropriedade(item, 'categoria_economica_cod')}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">Categoria Econômica</div>
+                    <div class="nivel-item">${obterPropriedade(item, 'categoria_economica_desc')}</div>
+                  </div>
+                </div>
+
+                <!-- Grupo de Despesa -->
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nd">${obterPropriedade(item, 'grupo_despesa_cod')}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">Grupo de Despesa</div>
+                    <div class="nivel-item">${obterPropriedade(item, 'grupo_despesa_desc')}</div>
+                  </div>
+                </div>
+
+                <!-- Modalidade de Aplicação -->
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nd">${obterPropriedade(item, 'modalidade_cod')}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">Modalidade de Aplicação</div>
+                    <div class="nivel-item">${obterPropriedade(item, 'modalidade_desc')}</div>
+                  </div>
+                </div>
+
+                <!-- Elemento de Despesa -->
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nd">${obterPropriedade(item, 'elemento_cod')}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">Elemento de Despesa</div>
+                    <div class="nivel-item">${obterPropriedade(item, 'elemento_desc')}</div>
+                  </div>
+                </div>
+
+                <!-- Subelemento / Desdobramento -->
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nd">${obterPropriedade(item, 'subelemento_cod')}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">Subelemento / Desdobramento</div>
+                    <div class="nivel-item">${obterPropriedade(item, 'subelemento_desc')}</div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="secao-bloco grid-4">
+              <div><div class="rotulo-campo">Indicador de Resultado Primário</div><div class="valor-campo">${obterPropriedade(item, 'indicador_resultado_primario', 'indicador_resultado')}</div></div>
+              <div><div class="rotulo-campo">Fundamento Legal</div><div class="valor-campo">${obterPropriedade(item, 'fundamento_legal')}</div></div>
+              <div><div class="rotulo-campo">Detalhamento da Despesa</div><div class="valor-campo">${obterPropriedade(item, 'detalhamento_despesa')}</div></div>
+              <div><div class="rotulo-campo">Vigência</div><div class="valor-campo">${obterPropriedade(item, 'vigencia')}</div></div>
+            </div>
+          </div>`;
+      }
+
+      if (tipo === 'nrs') {
+        const nrCodigo = String(obterPropriedade(item, 'natureza_receita', 'NR', 'codigo'));
+        const cat = String(item.categoria || '-');
+        const ori = String(item.origem || '-');
+        const esp = String(item.especie || '-');
+        const des = String(item.desdobramento || '-');
+        const tip = String(item.tipo || '-');
+
+        return `
+          <div class="card-ficha" style="border-top-color: var(--cor-nrs);">
+            <div class="codigo-destaque">${item.NR || item.codigo || codigo}</div>
+            <div class="titulo-destaque">${obterPropriedade(item, 'titulo', 'nome', 'descricao')}</div>
+            
+            <div class="tags-linha">
+              <span class="tag-info">Título reduzido: ${obterPropriedade(item, 'titulo_reduzido')}</span>
+              <span class="tag-info">Natureza de Receita - 2026</span>
+            </div>
+
+            <div class="secao-bloco">
+              <div class="rotulo-campo">Descrição Detalhada</div>
+              <div class="valor-campo" style="margin-top:6px; font-size: 0.95rem;">${obterPropriedade(item, 'descricao_detalhada', 'descricao')}</div>
+            </div>
+
+            <div class="secao-bloco">
+              <div class="rotulo-campo" style="margin-bottom:10px;">Estrutura do código</div>
+              <div class="estrutura-codigo-container">
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nr">${cat || '-'}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">${obterPropriedade(item, 'categoria_nome', 'Categoria Econômica')}</div>
+                    <div class="nivel-item">Categoria econômica</div>
+                  </div>
+                </div>
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nr">${ori || '-'}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">${obterPropriedade(item, 'origem_nome', 'Origem')}</div>
+                    <div class="nivel-item">Origem</div>
+                  </div>
+                </div>
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nr">${esp || '-'}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">${obterPropriedade(item, 'especie_nome', 'Espécie')}</div>
+                    <div class="nivel-item">Espécie</div>
+                  </div>
+                </div>
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nr">${des || '-'}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">${obterPropriedade(item, 'desdobramento_nome', 'Desdobramento')}</div>
+                    <div class="nivel-item">Desdobramento</div>
+                  </div>
+                </div>
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nr">${tip || '-'}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">${obterPropriedade(item, 'tipo_nome', 'Tipo')}</div>
+                    <div class="nivel-item">Tipo</div>
+                  </div>
+                </div>
+                <div class="linha-estrutura">
+                  <div class="caixa-codigo nr">${nrCodigo || '-'}</div>
+                  <div class="caixa-explicacao">
+                    <div class="nome-item">${obterPropriedade(item, 'natureza_receita_nome', 'titulo', 'nome')}</div>
+                    <div class="nivel-item">Natureza de Receita</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+    }
+
+    function renderizarSecaoListas(titulo, dados) {
+      if (!dados) return '';
+      const lista = Array.isArray(dados) ? dados.filter(i => i && i !== '-') : [dados].filter(i => i && i !== '-');
+      if (lista.length === 0) return '';
+
+      return `
+        <div class="secao-bloco">
+          <div class="rotulo-campo">${titulo} (${lista.length})</div>
+          <div class="pills-container">
+            ${lista.map(i => `<div class="pill-item">${i}</div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    /* MÓDULO CO */
+    function renderizarModuloCO() {
+      const dados = obterBaseDados('co');
+      if (!dados) {
+        areaResultado.innerHTML = `<div class="mensagem-vazia">Dados de CO não disponíveis.</div>`;
+        rodapeStatus.innerHTML = `<span style="color:#DC2626;">Atenção: A variável <code>DADOS_CO</code> não foi encontrada no <code>dados.js</code>.</span>`;
+        return;
+      }
+
+      rodapeStatus.innerHTML = `Base <b>CÓDIGO DE ACOMPANHAMENTO (CO)</b> carregada — Total de <b>${dados.length}</b> combinações registradas.`;
+
+      const unidadesUnicas = Array.from(new Set(dados.map(d => `${d.unidade} - ${d.sigla}`))).sort();
+
+      let dadosFiltradosFuncao = dados;
+      if (filtroCO.unidade) {
+        dadosFiltradosFuncao = dados.filter(d => `${d.unidade} - ${d.sigla}` === filtroCO.unidade);
+      }
+      const funcoesUnicas = Array.from(new Set(dadosFiltradosFuncao.map(d => d.funcao).filter(f => f && f !== '-'))).sort();
+
+      let dadosFiltradosSubfuncao = dadosFiltradosFuncao;
+      if (filtroCO.funcao) {
+        dadosFiltradosSubfuncao = dadosFiltradosFuncao.filter(d => d.funcao === filtroCO.funcao);
+      }
+      const subfuncoesUnicas = Array.from(new Set(dadosFiltradosSubfuncao.map(d => d.subfuncao).filter(sf => sf && sf !== '-'))).sort();
+
+      let dadosFiltradosAcao = dadosFiltradosSubfuncao;
+      if (filtroCO.subfuncao) {
+        dadosFiltradosAcao = dadosFiltradosSubfuncao.filter(d => d.subfuncao === filtroCO.subfuncao);
+      }
+      const acoesUnicas = Array.from(new Set(dadosFiltradosAcao.map(d => `${d.acao} - ${d.titulo_acao}`))).sort();
+
+      let dadosFiltradosFonte = dadosFiltradosAcao;
+      if (filtroCO.acao) {
+        dadosFiltradosFonte = dadosFiltradosAcao.filter(d => `${d.acao} - ${d.titulo_acao}` === filtroCO.acao);
+      }
+      const fontesUnicas = Array.from(new Set(dadosFiltradosFonte.map(d => d.fonte))).sort();
+
+      let coResultado = null;
+      let coDescricao = ' ';
+      let matchFinal = dadosFiltradosFonte;
+      if (filtroCO.fonte) {
+        matchFinal = dadosFiltradosFonte.filter(d => d.fonte === filtroCO.fonte);
+      }
+
+      if (matchFinal.length === 1) {
+        coResultado = matchFinal[0].co;
+        coDescricao = matchFinal[0].descricao;
+      }
+
+      areaResultado.innerHTML = `
+        <div class="co-form-container">
+          <div class="co-grid-filtros">
+            <div class="co-field-group">
+              <label>1. Unidade Orçamentária</label>
+              <select id="selectUnidade" onchange="atualizarFiltroCO('unidade', this.value)">
+                <option value="">-- Selecione a Unidade --</option>
+                ${unidadesUnicas.map(u => `<option value="${u}" ${filtroCO.unidade === u ? 'selected' : ''}>${u}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="co-field-group">
+              <label>2. Função</label>
+              <select id="selectFuncao" onchange="atualizarFiltroCO('funcao', this.value)">
+                <option value="">-- Selecione a Função --</option>
+                ${funcoesUnicas.map(f => `<option value="${f}" ${filtroCO.funcao === f ? 'selected' : ''}>${f}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="co-field-group">
+              <label>3. Subfunção</label>
+              <select id="selectSubfuncao" onchange="atualizarFiltroCO('subfuncao', this.value)">
+                <option value="">-- Selecione a Subfunção --</option>
+                ${subfuncoesUnicas.map(sf => `<option value="${sf}" ${filtroCO.subfuncao === sf ? 'selected' : ''}>${sf}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="co-field-group">
+              <label>4. Ação Orçamentária</label>
+              <select id="selectAcao" onchange="atualizarFiltroCO('acao', this.value)">
+                <option value="">-- Selecione a Ação --</option>
+                ${acoesUnicas.map(a => `<option value="${a}" ${filtroCO.acao === a ? 'selected' : ''}>${a}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="co-field-group">
+              <label>5. Fonte de Recurso</label>
+              <select id="selectFonte" onchange="atualizarFiltroCO('fonte', this.value)">
+                <option value="">-- Selecione a Fonte --</option>
+                ${fontesUnicas.map(f => `<option value="${f}" ${filtroCO.fonte === f ? 'selected' : ''}>${f}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          ${coResultado ? `
+            <div class="co-result-card">
+              <div class="co-result-label">Código de Acompanhamento de Execução Orçamentária (CO)</div>
+              <div class="co-result-value">${coResultado}</div>
+              <div class="co-result-descricao">${coDescricao}</div>
+            </div>
+          ` : `
+            <div class="mensagem-vazia" style="background:#F9FAFB;">
+              ${matchFinal.length > 1 ? `Existem <b>${matchFinal.length}</b> COs possíveis para os filtros aplicados. Continue detalhando as escolhas.` : 'Selecione os atributos acima para identificar o CO correspondente.'}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    window.atualizarFiltroCO = function(campo, valor) {
+      filtroCO[campo] = valor;
+      
+      if (campo === 'unidade') {
+        filtroCO.funcao = '';
+        filtroCO.subfuncao = '';
+        filtroCO.acao = '';
+        filtroCO.fonte = '';
+      } else if (campo === 'funcao') {
+        filtroCO.subfuncao = '';
+        filtroCO.acao = '';
+        filtroCO.fonte = '';
+      } else if (campo === 'subfuncao') {
+        filtroCO.acao = '';
+        filtroCO.fonte = '';
+      } else if (campo === 'acao') {
+        filtroCO.fonte = '';
+      }
+      
+      renderizarModuloCO();
+    };
+
+    /* MÓDULO ÓRGÃO */
+    function renderizarModuloOrgao() {
+      const dados = obterBaseDados('orgao');
+      if (!dados) {
+        areaResultado.innerHTML = `<div class="mensagem-vazia">Dados de Órgãos não disponíveis.</div>`;
+        rodapeStatus.innerHTML = `<span style="color:#DC2626;">Atenção: A variável <code>DADOS_UNIDADES</code> não foi encontrada em <code>dados.js</code>.</span>`;
+        return;
+      }
+
+      rodapeStatus.innerHTML = `Base <b>ÓRGÃO</b> carregada — Total de <b>${dados.length}</b> registros de unidades cadastrados.`;
+
+      const orgaosUnicos = Array.from(new Set(dados.map(item => item.orgao).filter(Boolean))).sort();
+
+      let uosUnicas = [];
+      if (orgaoSelecionado) {
+        const mapaUnicos = new Map();
+        const itensOrgao = dados.filter(item => item.orgao === orgaoSelecionado);
+
+        itensOrgao.forEach(item => {
+          const uo = obterPropriedade(item, 'uo', 'codigo');
+          const sigla = obterPropriedade(item, 'sigla');
+          const funcao = obterPropriedade(item, 'funcao');
+          const chave = `${uo}|${sigla}|${funcao}`;
+
+          if (!mapaUnicos.has(chave)) {
+            mapaUnicos.set(chave, { uo, sigla, funcao });
+          }
+        });
+
+        uosUnicas = Array.from(mapaUnicos.values());
+      }
+
+      areaResultado.innerHTML = `
+        <div class="orgao-container-card">
+          <div class="orgao-header-select">
+            <label>Selecione um Órgão</label>
+            <select id="selectOrgao" onchange="selecionarOrgao(this.value)">
+              <option value="">-- Selecione o Órgão --</option>
+              ${orgaosUnicos.map(org => `<option value="${org}" ${orgaoSelecionado === org ? 'selected' : ''}>${org}</option>`).join('')}
+            </select>
+          </div>
+
+          ${orgaoSelecionado ? `
+            <div class="tabela-uo-container">
+              <table class="tabela-uo">
+                <thead>
+                  <tr>
+                    <th>Unidade Orçamentária (UO)</th>
+                    <th>Sigla</th>
+                    <th>Função</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${uosUnicas.length > 0 ? uosUnicas.map(reg => `
+                    <tr>
+                      <td><b>${reg.uo}</b></td>
+                      <td>${reg.sigla}</td>
+                      <td>${reg.funcao}</td>
+                    </tr>
+                  `).join('') : '<tr><td colspan="3" class="mensagem-vazia">Nenhuma unidade encontrada para este órgão.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          ` : `
+            <div class="mensagem-vazia" style="background:#F9FAFB;">
+              Selecione um órgão no menu acima para exibir as Unidades Orçamentárias associadas.
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    window.selecionarOrgao = function(valor) {
+      orgaoSelecionado = valor;
+      renderizarModuloOrgao();
+    };
+
+    // INICIALIZAÇÃO SEGURA DA APLICAÇÃO APÓS CARREGAR O DOM
+    window.addEventListener('DOMContentLoaded', () => {
+      inputBusca = document.getElementById('inputBusca');
+      boxBusca = document.getElementById('boxBusca');
+      btnLimpar = document.getElementById('btnLimpar');
+      areaResultado = document.getElementById('areaResultado');
+      rodapeStatus = document.getElementById('rodapeStatus');
+      dicaBusca = document.getElementById('dicaBusca');
+      tabs = document.querySelectorAll('.tab-button');
+
+      // Registro do evento nas abas
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+
+          abaAtiva = tab.getAttribute('data-source');
+          const config = CONFIG_ABAS[abaAtiva];
+
+          boxBusca.style.borderColor = config.cor;
+          inputBusca.value = '';
+          inputBusca.placeholder = config.placeholder;
+
+          filtroCO = { unidade: '', funcao: '', subfuncao: '', acao: '', fonte: '' };
+          orgaoSelecionado = '';
+
+          if (abaAtiva === 'co' || abaAtiva === 'orgao') {
+            boxBusca.style.display = 'none';
+          } else {
+            boxBusca.style.display = 'flex';
+          }
+
+          renderizarDicaExemplos(config);
+          executarBusca();
+        });
+      });
+
+      // Eventos de busca e limpeza
+      btnLimpar.addEventListener('click', () => {
+        inputBusca.value = '';
+        filtroCO = { unidade: '', funcao: '', subfuncao: '', acao: '', fonte: '' };
+        orgaoSelecionado = '';
+        executarBusca();
+      });
+
+      inputBusca.addEventListener('input', executarBusca);
+
+      // Renderização Inicial
+      renderizarDicaExemplos(CONFIG_ABAS['acoes']);
+      executarBusca();
+    });
+  </script>
+</body>
+</html>
